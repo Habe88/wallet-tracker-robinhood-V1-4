@@ -38,63 +38,67 @@ export default function AddressManager({ addresses, onAdd, onRemove, onUpdate }:
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="sidebar-section">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Tracked Addresses ({addresses.length})</h2>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+        <h2 className="section-title">Tracked Addresses <span className="badge badge-neutral">{addresses.length}</span></h2>
+        <button onClick={() => setShowForm(!showForm)} className="btn-secondary text-sm">
           {showForm ? 'Cancel' : 'Add Address'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-6 space-y-3 p-4 bg-gray-50 rounded">
+        <form onSubmit={handleSubmit} className="mb-6 space-y-3 p-4 bg-bg-secondary border border-border rounded-lg">
           <div>
-            <label className="block text-sm font-medium mb-1">Address</label>
-            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="0x..." className="w-full px-3 py-2 border rounded" required />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Address</label>
+            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="0x..." className="input font-mono text-sm" required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Label (optional)</label>
-            <input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g., Main Wallet" className="w-full px-3 py-2 border rounded" />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Label (optional)</label>
+            <input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g., Main Wallet" className="input" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tags (comma separated)</label>
-            <input value={tags} onChange={e => setTags(e.target.value)} placeholder="e.g., whale, sniper" className="w-full px-3 py-2 border rounded" />
+            <label className="block text-sm font-medium text-text-secondary mb-1">Tags (comma separated)</label>
+            <input value={tags} onChange={e => setTags(e.target.value)} placeholder="e.g., whale, sniper" className="input" />
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          <button type="submit" disabled={loading} className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50">
+          {error && <p className="text-error text-sm">{error}</p>}
+          <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? 'Adding...' : 'Add'}
           </button>
         </form>
       )}
 
       {addresses.length === 0 && !showForm && (
-        <p className="text-gray-500 text-center py-8">No addresses yet. Click "Add Address" to start.</p>
+        <div className="empty-state">
+          <div className="empty-state-icon">📭</div>
+          <p className="empty-state-title">No addresses yet</p>
+          <p className="empty-state-desc">Click "Add Address" to start tracking</p>
+        </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="table-container">
+        <table className="table">
           <thead>
-            <tr className="border-b text-left text-gray-600">
-              <th className="pb-2">Address</th>
-              <th className="pb-2">Label</th>
-              <th className="pb-2">Tags</th>
-              <th className="pb-2">Added</th>
-              <th className="pb-2">Last Fetch</th>
-              <th className="pb-2">Actions</th>
+            <tr>
+              <th>Address</th>
+              <th>Label</th>
+              <th>Tags</th>
+              <th>Added</th>
+              <th>Last Fetch</th>
+              <th className="w-20">Actions</th>
             </tr>
           </thead>
           <tbody>
             {addresses.map(addr => (
-              <tr key={addr.address} className="border-b hover:bg-gray-50">
-                <td className="py-3 font-mono text-xs">{addr.address.slice(0,6)}...{addr.address.slice(-4)}</td>
-                <td className="py-3">{addr.label || '-'}</td>
-                <td className="py-3">
-                  {addr.tags?.map(t => <span key={t} className="mr-1 px-2 py-0.5 bg-primary-100 text-primary-700 rounded text-xs">{t}</span>)}
+              <tr key={addr.address}>
+                <td className="font-mono text-xs">{addr.address.slice(0,6)}...{addr.address.slice(-4)}</td>
+                <td>{addr.label || <span className="text-text-muted">-</span>}</td>
+                <td>
+                  {addr.tags?.map(t => <span key={t} className="mr-1 badge badge-info">{t}</span>)}
                 </td>
-                <td className="py-3 text-gray-500">{new Date(addr.addedAt).toLocaleDateString()}</td>
-                <td className="py-3 text-gray-500">{addr.lastFetchedAt ? new Date(addr.lastFetchedAt).toLocaleString() : 'Never'}</td>
-                <td className="py-3">
-                  <button onClick={() => onRemove(addr.address)} className="text-red-600 hover:underline text-xs">Remove</button>
+                <td className="text-text-secondary text-sm">{new Date(addr.addedAt).toLocaleDateString()}</td>
+                <td className="text-text-secondary text-sm">{addr.lastFetchedAt ? new Date(addr.lastFetchedAt).toLocaleString() : <span className="text-text-muted">Never</span>}</td>
+                <td>
+                  <button onClick={() => onRemove(addr.address)} className="btn-ghost text-error text-xs p-1">Remove</button>
                 </td>
               </tr>
             ))}

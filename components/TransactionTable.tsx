@@ -38,6 +38,14 @@ function formatAddress(addr: string): string {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
+function formatDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleString();
+}
+
+function formatGas(gasUsed: string): string {
+  return (BigInt(gasUsed) / BigInt(1e9)).toString() + ' Gwei';
+}
+
 export default function TransactionTable({ transactions, selectedAddress }: TransactionTableProps) {
   const [sortConfig, setSortConfig] = useState<{ key: keyof Transaction; dir: 'asc' | 'desc' }>({ key: 'blockNumber', dir: 'desc' });
   const [filter, setFilter] = useState('');
@@ -78,22 +86,42 @@ export default function TransactionTable({ transactions, selectedAddress }: Tran
   const isOutgoing = (tx: Transaction) => tx.from.toLowerCase() === selectedAddress.toLowerCase();
   const isIncoming = (tx: Transaction) => tx.to.toLowerCase() === selectedAddress.toLowerCase();
 
+  const getMethodLabel = (methodId?: string) => {
+    if (!methodId || methodId === '0x') return 'Transfer';
+    return METHOD_LABELS[methodId] || methodId;
+  };
+
+  if (sortedTransactions.length === 0) {
+    return (
+      <div className="card">
+        <div className="empty-state h-64">
+          <div className="empty-state-icon">📋</div>
+          <p className="empty-state-title">{filter ? 'No transactions match filter' : 'No transactions yet'}</p>
+          <p className="empty-state-desc">{filter ? 'Try adjusting your search' : 'Click "Fetch" to load data'}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="p-4 border-b flex gap-4 items-center">
-        <h2 className="text-xl font-semibold">Transactions ({transactions.length})</h2>
+    <div className="card overflow-hidden">
+      <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary">Transactions</h2>
+          <p className="text-text-secondary text-sm mt-0.5">{sortedTransactions.length} transactions for {formatAddress(selectedAddress)}</p>
+        </div>
         <input
           type="text"
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          placeholder="Filter by hash, address, token, method..."
-          className="px-3 py-2 border rounded w-80"
+          placeholder="Filter: hash, address, token, method..."
+          className="input w-full sm:w-80"
         />
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+      <div className="table-container">
+        <table className="table">
+          <thead>
             <tr>
               {[
                 { key: 'blockNumber', label: 'Block' },
@@ -109,13 +137,13 @@ export default function TransactionTable({ transactions, selectedAddress }: Tran
               ].map(col => (
                 <th
                   key={col.key}
-                  className="px-3 py-2 text-left cursor-pointer hover:bg-gray-100"
+                  className="cursor-pointer hover:bg-bg-hover transition-colors"
                   onClick={() => handleSort(col.key as keyof Transaction)}
                 >
                   <div className="flex items-center gap-1">
                     {col.label}
                     {sortConfig.key === col.key && (
-                      <span>{sortConfig.dir === 'asc' ? '↑' : '↓'}</span>
+                      <span className="text-accent-primary">{sortConfig.dir === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
@@ -124,44 +152,36 @@ export default function TransactionTable({ transactions, selectedAddress }: Tran
           </thead>
           <tbody>
             {sortedTransactions.map(tx => (
-              <tr key={tx.hash} className="border-b hover:bg-gray-50">
-                <td className="px-3 py-2 font-mono text-xs">{tx.blockNumber.toLocaleString()}</td>
-                <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                  {new Date(tx.timestamp).toLocaleString()}
-                </td>
-                <td className="px-3 py-2 font-mono text-xs">
-                  <a href={`https://robinhoodchain.blockscout.com/tx/${tx.hash}`} target="_blank" rel="noopener" className="text-primary-600 hover:underline">
+              <tr key={tx.hash}>
+                <td className="font-mono text-xs text-text-secondary">{tx.blockNumber.toLocaleString()}</td>
+                <td className="text-text-secondary whitespace-nowrap text-sm">{formatDate(tx.timestamp)}</td>
+                <td className="font-mono text-xs">
+                  <a href={`https://robinhoodchain.blockscout.com/tx/${tx.hash}`} target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:text-accent-light hover:underline">
                     {tx.hash.slice(0, 10)}...
                   </a>
                 </td>
-                <td className="px-3 py-2">
-                  <span className={`px-2 py-0.5 rounded text-xs ${
-                    tx.isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                  }`}>
-                    {METHOD_LABELS[tx.methodId || '0x'] || tx.methodId || 'Unknown'}
+                <td>
+                  <span className={`badge ${tx.isError ? 'badge-error' : 'badge-success'}`}>
+                    {getMethodLabel(tx.methodId)}
                   </span>
                 </td>
-                <td className="px-3 py-2 font-mono text-xs">
+                <td className="font-mono text-xs">
                   {formatAddress(tx.from)}
-                  {isOutgoing(tx) && <span className="ml-1 text-red-600 text-xs">(out)</span>}
-                  {isIncoming(tx) && <span className="ml-1 text-green-600 text-xs">(in)</span>}
+                  {isOutgoing(tx) && <span className="ml-1 badge badge-error text-[10px]">OUT</span>}
+                  {isIncoming(tx) && <span className="ml-1 badge badge-success text-[10px]">IN</span>}
                 </td>
-                <td className="px-3 py-2 font-mono text-xs">
+                <td className="font-mono text-xs">
                   {formatAddress(tx.to)}
-                  {isIncoming(tx) && <span className="ml-1 text-green-600 text-xs">(in)</span>}
-                  {isOutgoing(tx) && <span className="ml-1 text-red-600 text-xs">(out)</span>}
+                  {isIncoming(tx) && <span className="ml-1 badge badge-success text-[10px]">IN</span>}
+                  {isOutgoing(tx) && <span className="ml-1 badge badge-error text-[10px]">OUT</span>}
                 </td>
-                <td className="px-3 py-2">{tx.tokenSymbol || 'ETH'}</td>
-                <td className="px-3 py-2 font-mono text-right">
+                <td className="font-medium">{tx.tokenSymbol || 'ETH'}</td>
+                <td className="font-mono text-sm tabular-nums text-right pr-4">
                   {tx.tokenSymbol ? formatValue(tx.value, tx.tokenDecimals || 18) : formatValue(tx.value)}
                 </td>
-                <td className="px-3 py-2 font-mono text-xs text-right">
-                  {(BigInt(tx.gasUsed) / BigInt(1e9)).toString()} Gwei
-                </td>
-                <td className="px-3 py-2">
-                  <span className={`px-2 py-0.5 rounded text-xs ${
-                    tx.isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                  }`}>
+                <td className="font-mono text-xs text-text-secondary text-right pr-4">{formatGas(tx.gasUsed)}</td>
+                <td>
+                  <span className={`badge ${tx.isError ? 'badge-error' : 'badge-success'}`}>
                     {tx.isError ? 'Failed' : 'Success'}
                   </span>
                 </td>
@@ -171,9 +191,9 @@ export default function TransactionTable({ transactions, selectedAddress }: Tran
         </table>
       </div>
 
-      {sortedTransactions.length === 0 && (
-        <div className="p-8 text-center text-gray-500">
-          {filter ? 'No transactions match filter' : 'No transactions yet. Click "Fetch" to load data.'}
+      {filter && sortedTransactions.length === 0 && (
+        <div className="p-4 text-center text-text-muted">
+          No transactions match "{filter}"
         </div>
       )}
     </div>
