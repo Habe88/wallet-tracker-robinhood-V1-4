@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm install --registry=https://registry.npmjs.org && npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install --registry=https://registry.npmjs.org"
+}
