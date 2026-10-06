@@ -1,5 +1,6 @@
 {
-  "buildCommand": "npm install --registry=https://registry.npmjs.org && npm run build",
+  "buildCommand": "npm config set registry https://registry.npmjs.org && npm install && npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install --registry=https://registry.npmjs.org"
+  "installCommand": "npm config set registry https://registry.npmjs.org && npm install",
+  "framework": "nextjs"
 }
