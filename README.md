@@ -111,3 +111,5 @@ Open http://localhost:3000
 - [ ] Webhook for auto-fetch
 - [ ] Multi-chain support
 # Force redeploy
+
+<!-- force rebuild Wed Oct  7 12:55:33 AM CST 2026 -->
